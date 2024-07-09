@@ -11,7 +11,6 @@ global dict1
 global data_list
 
 def extract_meat_part(prd_name):
-
     # [샘플]이 포함된 경우 None 반환
     if '[샘플]' in prd_name:
         return None
@@ -44,7 +43,7 @@ def crawling(soup, part):
             brand = r.findall('\\|([a-zA-Zㄱ-ㅎ가-힣]+)', prd_name)
             country = r.findall('-([a-zA-Zㄱ-ㅎ가-힣]+)(?=\\|)', prd_name)
             
-             # 가격 정보 추출 수정
+            # 가격 정보 추출 수정
             price_info = item.find('em', class_='pric_stock')
             if price_info:
                 price_text = price_info.text.replace(" ", "").replace(',', '')
@@ -64,7 +63,6 @@ def crawling(soup, part):
             else:
                 price_text = ''
 
-            # 등급 추출    
             grade = r.findall(r'-([A-Za-z0-9]+(?:그레이드)?)(?:\||$)', prd_name)
             if not grade:
                 grade = r.findall(r'-((?:초이스|셀렉트|프라임|언그레이드|MB\d+(?:~\d+)?|MB\d+UP))(?:\||$)', prd_name)
@@ -95,13 +93,6 @@ meat_part = {'목심','차돌양지','사태','앞다리%2F전각'}
 file_path = '/Users/jaechankwon/Downloads/'
 file_name = 'market_price.xlsx'
 month = datetime.today().strftime("%m월")
-day = datetime.today().strftime("%d일")
-writer = pd.ExcelWriter(file_path + file_name, mode='a', engine='openpyxl', if_sheet_exists='overlay')
-df = pd.read_excel(file_path + file_name,
-            sheet_name= 'Sheet2',
-                header= 2,
-                dtype = {'기준일자':object,'조사업체':str,'원산지':str,'등급':str,'가격팩당':str,'가격KG':str}
-    )
 date = datetime.today().strftime("%m-%d")
 data_list = []
 
@@ -111,9 +102,45 @@ for part in meat_part:
     soup = BeautifulSoup(html, 'html5lib')
     crawling(soup, part)
 
-df = pd.DataFrame(data_list)
-df.to_excel(writer,sheet_name=month)
-max_row = writer.sheets[f"{month}"].max_row
-writer._save()
-writer.close()
+# 엑셀 파일 열기 (기존 파일이 있으면 열고,  // 없으면 새로 만듦 // - 해당부분 주석처리 -)
+# try:
+workbook = openpyxl.load_workbook(file_path + file_name)
+# except FileNotFoundError:
+    # workbook = openpyxl.Workbook()
+
+# 현재 월의 시트가 있는지 확인
+if month in workbook.sheetnames:
+    sheet = workbook[month]
+    existing_data = []
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        existing_data.append(dict(zip(['기준일자', '조사업체', '원산지', '부위', '등급', '가격KG'], row)))
+    
+    # 기존 데이터와 새 데이터를 합칩니다
+    temp_data = existing_data + data_list
+else:
+    # 새 시트를 가장 오른쪽에 추가
+    sheet = workbook.create_sheet(title=month)
+    workbook.active = sheet
+    temp_data = data_list
+
+# 데이터프레임 생성
+df = pd.DataFrame(temp_data)
+
+# 기존 데이터 삭제
+for row in sheet['A2:F' + str(sheet.max_row)]:
+    for cell in row:
+        cell.value = None
+
+# 데이터를 시트에 쓰기 (기존 데이터 + 새 데이터)
+for r, row in enumerate(df.values, start=2):
+    for c, value in enumerate(row, start=1):
+        sheet.cell(row=r, column=c, value=value)
+
+# 열 이름 쓰기
+for c, column_name in enumerate(df.columns, start=1):
+    sheet.cell(row=1, column=c, value=column_name)
+
+# 파일 저장
+workbook.save(file_path + file_name)
+
 print("저장완료")
