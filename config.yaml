@@ -1,0 +1,9 @@
+# config.yaml
+url_base: "https://www.meatbox.co.kr/fo/product/productListPage.do"
+file_path: "/Users/jaechankwon/Downloads/"
+file_name: "market_price.xlsx"
+meat_parts:
+  - "목심"
+  - "차돌양지"
+  - "사태"
+  - "앞다리%2F전각"
