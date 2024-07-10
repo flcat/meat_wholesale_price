@@ -17,7 +17,7 @@
 1. 저장소 클론 : git clone https://github.com/flcat/meat_wholesale_price.git
 2. 프로젝트 디렉터리로 이동 : cd meat_wholesale_price
 3. (선택사항) 가상 환경을 생성하고 활성화합니다 : python -m venv venv   source venv/bin/activate
-   # Windows의 경우: venv\Scripts\activate 
+         # Windows의 경우: venv\Scripts\activate 
 5. 필요 라이브러리 설치 : pip install -r requirements.txt
 
 ## 사용 방법
