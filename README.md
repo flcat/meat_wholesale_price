@@ -15,14 +15,15 @@
 ## 설치 방법
 
 1. 저장소 클론 : git clone https://github.com/flcat/meat_wholesale_price.git
-2. 필요 라이브러리 설치 : pip install -r requirements.txt
+2. 프로젝트 디렉터리로 이동 : cd meat_wholesale_price
+3. (선택사항) 가상 환경을 생성하고 활성화합니다 : python -m venv venv   source venv/bin/activate    # Windows의 경우: venv\Scripts\activate 
+4. 필요 라이브러리 설치 : pip install -r requirements.txt
 
 ## 사용 방법
 
 1. `config.yaml` 파일을 열어 필요한 설정을 수정합니다.
 2. `meat_price_scrap.py` 파일을 실행
    python meat_price_scrap.py
-
 3. 크롤링이 완료되면 지정된 경로에 `market_price.xlsx` 파일이 생성 또는 업데이트됩니다.
 
 ## 구성 파일
