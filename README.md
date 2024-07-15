@@ -59,3 +59,11 @@
 ## 라이선스
 
 이 프로젝트는 MIT 라이선스 하에 제공됩니다.
+
+## 시연
+
+https://github.com/user-attachments/assets/2430aafc-c9bd-4b20-9dbb-45710fb464b0
+
+https://github.com/user-attachments/assets/59cf2310-3ec4-4f85-af6f-dc99e0d46616
+
+
