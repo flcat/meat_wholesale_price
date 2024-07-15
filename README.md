@@ -40,7 +40,7 @@
 
 ## 사용 방법
 
-1. `config.yaml` 파일을 열어 필요한 설정을 수정합니다.
+1. `config.yaml`, `config2.yaml` 파일을 열어 필요한 설정을 수정합니다.
 2. `meat_price_scrap.py`, `geumcheon_meat_price_scrap.py` 파일을 실행
    python meat_price_scrap.py
 3. 크롤링이 완료되면 지정된 경로에 `market_price.xlsx` 파일이 생성 또는 업데이트됩니다.
