@@ -1,0 +1,32 @@
+base_url: "https://www.ekcm.co.kr"
+product_list_endpoint: "/pd/product"
+file_path: "/Users/jaechankwon/Downloads/"
+file_name: "market_price.xlsx"
+
+meat_parts:
+  - name: "목심"
+    leafCtgNo: "420208"
+    dispCtgNoList: "420208"
+  - name: "사태"
+    leafCtgNo: "420214"
+    dispCtgNoList: "420214"
+  - name: "차돌양지"
+    leafCtgNo: "420235"
+    dispCtgNoList: "420235"
+  - name: "전각"
+    leafCtgNo: "420233"
+    dispCtgNoList: "420233"
+
+categories:
+  - name: "호주"
+    params:
+      dispCtgNo: "4202"
+  - name: "미국"
+    params:
+      dispCtgNo: "5201"
+  - name: "뉴질랜드"
+    params:
+      dispCtgNo: "4203"
+  - name: "기타"
+    params:
+      dispCtgNo: "810844"
