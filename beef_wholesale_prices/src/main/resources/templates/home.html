@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beef Wholesale Prices</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div>
+  <h2>Grade-based Chart</h2>
+  <label for="gradeSelect">Grade:</label>
+  <select id="gradeSelect">
+    <option th:each="grade : ${grades}" th:value="${grade}" th:text="${grade}"></option>
+  </select>
+  <button id="updateGradeChart">Update Grade Chart</button>
+</div>
+<div>
+  <canvas id="gradeChart"></canvas>
+</div>
+
+<div>
+  <h2>Brand-based Chart</h2>
+  <label for="brandSelect">Brand:</label>
+  <select id="brandSelect">
+    <option th:each="brand : ${brands}" th:value="${brand}" th:text="${brand}"></option>
+  </select>
+  <button id="updateBrandChart">Update Brand Chart</button>
+</div>
+<div>
+  <canvas id="brandChart"></canvas>
+</div>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  var gradeChart, brandChart;
+
+  function updateGradeChart() {
+    var grade = $('#gradeSelect').val();
+    $.getJSON('/api/chartData/byGrade', {grade: grade}, function(chartDataList) {
+      updateChartData(chartDataList, 'gradeChart', grade + ' Grade Beef Prices by Brand');
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+      console.error("Error fetching grade data:", textStatus, errorThrown);
+    });
+  }
+
+  function updateBrandChart() {
+    var brand = $('#brandSelect').val();
+    $.getJSON('/api/chartData/byBrand', {brand: brand}, function(chartDataList) {
+      updateChartData(chartDataList, 'brandChart', brand + ' Beef Prices by Grade');
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+      console.error("Error fetching brand data:", textStatus, errorThrown);
+    });
+  }
+
+  function updateChartData(chartDataList, chartId, titleText) {
+    console.log("Updating chart:", chartId, "with data:", chartDataList);
+
+    var labels = [...new Set(chartDataList.map(item => iteb.label))];
+    var dates = [...new Set(chartDataList.map(item => iteb.date))].sort((a, b) => new Date(a) - new Date(b));
+
+    var datasets = labels.map(label => {
+      return {
+        label: label,
+        data: dates.map(date => {
+          var item = chartDataList.find(item => iteb.label === label && iteb.date === date);
+          return item ? iteb.avgPrice : null;
+        }),
+        borderColor: getRandomColor(),
+        fill: false
+      };
+    });
+
+    var ctx = document.getElementById(chartId).getContext('2d');
+    var chartConfig = {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: titleText
+          }
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'day'
+            },
+            title: {
+              display: true,
+              text: 'Date'
+            }
+          },
+          y: {
+            beginAtZero: false,
+            title: {
+              display: true,
+              text: 'Price (KG)'
+            }
+          }
+        }
+      }
+    };
+
+    if (chartId === 'gradeChart') {
+      if (gradeChart) {
+        gradeChart.data = chartConfig.data;
+        gradeChart.options = chartConfig.options;
+        gradeChart.update();
+      } else {
+        gradeChart = new Chart(ctx, chartConfig);
+      }
+    } else {
+      if (brandChart) {
+        brandChart.data = chartConfig.data;
+        brandChart.options = chartConfig.options;
+        brandChart.update();
+      } else {
+        brandChart = new Chart(ctx, chartConfig);
+      }
+    }
+  }
+
+  function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
+  $(document).ready(function() {
+    console.log("Document ready, initializing charts...");
+    $('#updateGradeChart').click(updateGradeChart);
+    $('#updateBrandChart').click(updateBrandChart);
+    updateGradeChart();
+    updateBrandChart();
+  });
+  /*]]>*/
+</script>
+</body>
+</html>
