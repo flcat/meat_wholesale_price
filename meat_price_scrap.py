@@ -150,22 +150,27 @@ def main():
         existing_data = []
         for row in sheet.iter_rows(min_row=2, values_only=True):
             existing_data.append(dict(zip(['기준일자', '조사업체', '원산지', '부위', '등급', '가격KG'], row)))
+        
+        # 기존 데이터와 새 데이터를 합치고 중복 제거
         temp_data = existing_data + data_list
+        df = pd.DataFrame(temp_data)
+        df = df.drop_duplicates(subset=['기준일자', '조사업체', '원산지', '부위', '등급', '가격KG'], keep='last')
     else:
         sheet = workbook.create_sheet(title=month)
         workbook.active = sheet
-        temp_data = data_list
+        df = pd.DataFrame(data_list)
 
-    df = pd.DataFrame(temp_data)
-
+    # 기존 데이터 삭제
     for row in sheet['A2:F' + str(sheet.max_row)]:
         for cell in row:
             cell.value = None
 
+    # 새 데이터 쓰기
     for r, row in enumerate(df.values, start=2):
         for c, value in enumerate(row, start=1):
             sheet.cell(row=r, column=c, value=value)
 
+    # 열 이름 쓰기
     for c, column_name in enumerate(df.columns, start=1):
         sheet.cell(row=1, column=c, value=column_name)
 
