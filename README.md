@@ -30,12 +30,17 @@ Spring Boot 2.x
 
 Python 의존성 설치:
   Copypip install -r requirements.txt
-Java 의존성은 Gradle을 통해 관리됩니다.
+  
+  Java 의존성은 Gradle을 통해 관리됩니다.
+
+
 데이터베이스 설정:
+
   PostgreSQL 데이터베이스를 생성하고 접속 정보를 config3.yaml 파일에 설정하세요.
 
 
 설정 파일:
+  
   config3.yaml 파일을 생성하고 데이터베이스 접속 정보와 파일 경로를 설정하세요.
 
 
