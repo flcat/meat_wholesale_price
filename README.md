@@ -1,65 +1,82 @@
-# 육류 도매 가격 크롤러
+# 쇠고기 도매 가격 분석 프로젝트
+이 프로젝트는 쇠고기 도매 가격을 수집, 저장, 분석하는 통합 시스템입니다.
+주요 기능
 
-이 프로젝트는 두 가지 다른 소스에서 육류 도매 가격 정보를 자동으로 수집하고 엑셀 파일로 저장하는 웹 크롤러입니다.
+### 데이터 수집
+- 일반 육류 도매 가격 크롤링 (meat_price_scrap.py)
+- 금천 축산물 공판장 가격 크롤링 (geumcheon_meat_price_scrap.py)
 
-## 주요 기능
 
-1. 일반 육류 도매 가격 크롤링 (`meat_price_scrap.py`)
-2. 금천 축산물 공판장 가격 크롤링 (`geumcheon_meat_price_scrap.py`)
+### 데이터 저장
+- 엑셀 파일에서 PostgreSQL 데이터베이스로 데이터 이관 (excel_to_postgresql.py)
 
-## 기능 상세
 
-### 1. 일반 육류 도매 가격 크롤러 (meat_price_scrap.py)
+### 데이터 분석 및 시각화
+- Spring Boot 기반 웹 애플리케이션 (Java 소스 코드)
 
-- 지정된 육류 부위별 가격 정보 크롤링
-- 병렬 처리를 통한 효율적인 데이터 수집
-- 수집된 데이터의 중복 제거 및 엑셀 파일 저장
-- 로깅을 통한 크롤링 과정 모니터링
 
-### 2. 금천 축산물 공판장 가격 크롤러 (geumcheon_meat_price_scrap.py)
 
-- 금천 축산물 공판장의 가격 정보 크롤링
-- Playwright를 사용한 동적 웹 페이지 처리
-- 카테고리 및 부위별 데이터 수집
-- 수집된 데이터의 엑셀 파일 저장
+## 시스템 요구사항
 
-## 요구사항
+Python 3.7+
+Java 11+
+PostgreSQL 데이터베이스
+Spring Boot 2.x
 
-- Python 3.7+
-- 필요한 라이브러리: 
-  - 공통: requests, pandas, numpy, BeautifulSoup, openpyxl, PyYAML
-  - 금천 크롤러용: playwright
+## 설치 및 설정
 
-## 설치 방법
+저장소 클론:
+  Copygit clone https://github.com/flcat/meat_wholesale_price.git
 
-1. 저장소 클론 : git clone https://github.com/flcat/meat_wholesale_price.git
-2. 프로젝트 디렉터리로 이동 : cd meat_wholesale_price
-3. (선택사항) 가상 환경을 생성하고 활성화합니다 : python -m venv venv   source venv/bin/activate
-         # Windows의 경우: venv\Scripts\activate 
-5. 필요 라이브러리 설치 : pip install -r requirements.txt
+Python 의존성 설치:
+  Copypip install -r requirements.txt
+Java 의존성은 Gradle을 통해 관리됩니다.
+데이터베이스 설정:
+  PostgreSQL 데이터베이스를 생성하고 접속 정보를 config3.yaml 파일에 설정하세요.
+
+
+설정 파일:
+  config3.yaml 파일을 생성하고 데이터베이스 접속 정보와 파일 경로를 설정하세요.
+
+
 
 ## 사용 방법
 
-1. `config.yaml`, `config2.yaml` 파일을 열어 필요한 설정을 수정합니다.
-2. `meat_price_scrap.py`, `geumcheon_meat_price_scrap.py` 파일을 실행
-   python meat_price_scrap.py
-3. 크롤링이 완료되면 지정된 경로에 `market_price.xlsx` 파일이 생성 또는 업데이트됩니다.
+데이터 수집:
 
-## 구성 파일
+  Copypython meat_price_scrap.py
+  python geumcheon_meat_price_scrap.py
 
-- `meat_price_scrap.py`, `geumcheon_meat_price_scrap.py`: 메인 크롤링 스크립트
-- `config.yaml`, `config2.yaml`: 설정 파일 (미트박스, 금천)
-- `requirements.txt`: 필요한 Python 패키지 목록
+데이터베이스 저장:
+
+  Copypython excel_to_postgresql.py
+
+웹 애플리케이션 실행:
+
+  Spring Boot 애플리케이션을 실행하여 데이터 분석 및 시각화 기능을 사용할 수 있습니다.
+
+
+## 프로젝트 구조
+
+meat_price_scrap.py: 일반 육류 도매 가격 크롤링 스크립트
+geumcheon_meat_price_scrap.py: 금천 축산물 공판장 가격 크롤링 스크립트
+excel_to_postgresql.py: 엑셀 데이터를 PostgreSQL로 이관하는 스크립트
+src/main/java/flcat/beef_wholesale_prices/: Java 소스 코드 디렉토리
+beef/: 엔티티 및 리포지토리 클래스
+config/: 설정 클래스
+dto/: 데이터 전송 객체
+service/: 비즈니스 로직 서비스
+web/: 컨트롤러 클래스
+
+
 
 ## 주의사항
 
-- 크롤링 시 웹사이트의 구조가 변경될 경우 코드 수정이 필요할 수 있습니다.
-- 과도한 요청은 웹사이트에 부하를 줄 수 있으므로 적절한 간격을 두고 사용하세요.
+데이터 수집 시 웹사이트의 이용 약관을 준수하세요.
+민감한 정보(예: 데이터베이스 접속 정보)는 공개 저장소에 직접 포함하지 마세요.
 
 ## 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 제공됩니다.
-
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
 ## 시연
 
 https://github.com/user-attachments/assets/2430aafc-c9bd-4b20-9dbb-45710fb464b0
