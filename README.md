@@ -1,4 +1,6 @@
 # 쇠고기 도매 가격 분석 프로젝트
+# http://gogiyo.com/charts
+
 이 프로젝트는 쇠고기 도매 가격을 수집, 저장, 분석하는 통합 시스템입니다.
 주요 기능
 
@@ -15,6 +17,8 @@
 - Spring Boot 기반 웹 애플리케이션 (Java 소스 코드)
 
 
+## 사용된 기술 스택
+Python, Springboot, SpringJpa, PostgreSQL, AWS EC2, ACM, Nginx, Docker
 
 ## 시스템 요구사항
 
