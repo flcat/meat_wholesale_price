@@ -16,7 +16,7 @@ logging.basicConfig(filename='meat_price_scrap.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 설정 파일 로드
-with open('config.yaml', 'r') as f:
+with open('/Users/jaechankwon/meat_market_price/config.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
 def extract_meat_part(prd_name):

@@ -14,7 +14,7 @@ logging.basicConfig(filename='meat_price_scrap.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 설정 파일 로드
-with open('config2.yaml', 'r') as f:
+with open('/Users/jaechankwon/meat_market_price/config2.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
 def extract_meat_part(prd_name):
@@ -33,75 +33,83 @@ async def crawl_category(page, category, meat_part):
     query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
     full_url = f"{url}?{query_string}"
     
-    await page.goto(full_url, wait_until="domcontentloaded")
-    
-    # 페이지 로드 상태 확인 및 스크롤
-    await page.evaluate("""
-        () => {
-            return new Promise((resolve) => {
-                let totalHeight = 0;
-                let distance = 100;
-                let timer = setInterval(() => {
-                    let scrollHeight = document.body.scrollHeight;
-                    window.scrollBy(0, distance);
-                    totalHeight += distance;
-                    if(totalHeight >= scrollHeight){
-                        clearInterval(timer);
-                        resolve();
-                    }
-                }, 100);
-            });
-        }
-    """)
-    
-    content = await page.content()
-    soup = BeautifulSoup(content, 'html.parser')
-    items = soup.select("#content > div.inner.mo-wide > div.list-wrap > div.list-area > div.list-cont > ul > li")
-    
-    if not items:
-        print(f"No items found for {category['name']} - {meat_part['name']}")
-        return []
-
-    category_data = []
-    print(f"Crawling {category['name']} - {meat_part['name']}...")
-    
-    for item in items:
-        try:
-            prd_info = item.select_one("div > a > div.pr-info > div.name-wrap > p")
-            prd_name = prd_info.text.strip() if prd_info else ""
-            
-            # 정규표현식을 사용하여 브랜드와 부위 분리
-            match = re.match(r'(.*?)_(.+)', prd_name)
-            if match:
-                brand, part = match.groups()
-            else:
-                brand, part = "Unknown", prd_name
-
-            grade_elem = item.select_one("div > div > div:nth-child(2) > div > p")
-            grade = grade_elem.text.strip() if grade_elem else ""
-            
-            price_elem = item.select_one("div > div > div.pd-row.md.show-pc > p > span.pd-price.xs.c-primary")
-            price = price_elem.text.strip().replace(',', '').replace('원', '') if price_elem else ""
-            
-            dict1 = {
-                '기준일자': datetime.today().strftime("%m-%d"),
-                '조사업체': brand,
-                '원산지': category['name'],
-                '부위': meat_part['name'],
-                '등급': grade,
-                '가격KG': price
+    try:
+        await page.goto(full_url, wait_until="networkidle", timeout=60000)
+        
+        # 페이지 로드 상태 확인 및 스크롤
+        await page.evaluate("""
+            () => {
+                return new Promise((resolve) => {
+                    let totalHeight = 0;
+                    let distance = 100;
+                    let timer = setInterval(() => {
+                        let scrollHeight = document.body.scrollHeight;
+                        window.scrollBy(0, distance);
+                        totalHeight += distance;
+                        if(totalHeight >= scrollHeight){
+                            clearInterval(timer);
+                            resolve();
+                        }
+                    }, 100);
+                });
             }
-            category_data.append(dict1)
-            
-            print(f"Processed: {prd_name}")
-            
-        except Exception as e:
-            logging.error(f"Error processing item: {e}")
-            print(f"Error processing item: {e}")
+        """)
+        
+        await page.wait_for_selector("#content > div.inner.mo-wide > div.list-wrap > div.list-area > div.list-cont > ul > li", timeout=30000)
+        
+        content = await page.content()
+        soup = BeautifulSoup(content, 'html.parser')
+        items = soup.select("#content > div.inner.mo-wide > div.list-wrap > div.list-area > div.list-cont > ul > li")
+        
+        if not items:
+            print(f"No items found for {category['name']} - {meat_part['name']}")
+            return []
 
-    print(f"Completed crawling {category['name']} - {meat_part['name']}. Total items: {len(category_data)}")
-    logging.info(f"Processed {len(category_data)} items for {category['name']} - {meat_part['name']}")
-    return category_data
+        category_data = []
+        print(f"Crawling {category['name']} - {meat_part['name']}...")
+        
+        for item in items:
+            try:
+                prd_info = item.select_one("div > a > div.pr-info > div.name-wrap > p")
+                prd_name = prd_info.text.strip() if prd_info else ""
+                
+                # 정규표현식을 사용하여 브랜드와 부위 분리
+                match = re.match(r'(.*?)_(.+)', prd_name)
+                if match:
+                    brand, part = match.groups()
+                else:
+                    brand, part = "Unknown", prd_name
+
+                grade_elem = item.select_one("div > div > div:nth-child(2) > div > p")
+                grade = grade_elem.text.strip() if grade_elem else ""
+                
+                price_elem = item.select_one("div > div > div.pd-row.md.show-pc > p > span.pd-price.xs.c-primary")
+                price = price_elem.text.strip().replace(',', '').replace('원', '') if price_elem else ""
+                
+                dict1 = {
+                    '기준일자': datetime.today().strftime("%m-%d"),
+                    '조사업체': brand,
+                    '원산지': category['name'],
+                    '부위': meat_part['name'],
+                    '등급': grade,
+                    '가격KG': price
+                }
+                category_data.append(dict1)
+                
+                print(f"Processed: {prd_name}")
+                
+            except Exception as e:
+                logging.error(f"Error processing item: {e}")
+                print(f"Error processing item: {e}")
+
+        print(f"Completed crawling {category['name']} - {meat_part['name']}. Total items: {len(category_data)}")
+        logging.info(f"Processed {len(category_data)} items for {category['name']} - {meat_part['name']}")
+        return category_data
+
+    except Exception as e:
+        logging.error(f"Error crawling {category['name']} - {meat_part['name']}: {e}")
+        print(f"Error crawling {category['name']} - {meat_part['name']}: {e}")
+        return []
 
 async def main():
     try:
@@ -110,7 +118,10 @@ async def main():
         
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context(viewport={'width': 1920, 'height': 1080})
+            context = await browser.new_context(
+                viewport={'width': 1920, 'height': 1080},
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            )
             
             tasks = []
             for category in config['categories']:

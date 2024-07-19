@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 # 설정 파일 로드
-with open('config3.yaml', 'r') as f:
+with open('/Users/jaechankwon/meat_market_price/config3.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
 # PostgreSQL 연결 설정
