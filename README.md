@@ -1,5 +1,5 @@
 # 쇠고기 도매 가격 분석 프로젝트
-# http://gogiyo.com/charts
+# [http://gogiyo.com/charts](https://gogiyo.com/charts)
 
 이 프로젝트는 쇠고기 도매 가격을 수집, 저장, 분석하는 통합 시스템입니다.
 
