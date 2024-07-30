@@ -57,17 +57,14 @@
       border-radius: 5px;
       font-size: 0.9em;
     }
-
     .price-info h3 {
       margin-top: 0;
       margin-bottom: 15px;
     }
-
     .price-info h4 {
       margin-top: 15px;
       margin-bottom: 10px;
     }
-
     .price-info p {
       margin: 5px 0;
     }
@@ -108,12 +105,11 @@
 </div>
 
 <script th:inline="javascript">
-  // 색상 맵 정의
   const partColors = {
-    '목심': 'rgb(255, 0, 0)',      // 빨강
-    '앞다리/전각': 'rgb(255, 165, 0)', // 노랑
-    '사태': 'rgb(50, 130, 40)',      // 초록
-    '차돌양지': 'rgb(0, 0, 255)'    // 남색
+    '목심': 'rgb(255, 0, 0)',
+    '앞다리/전각': 'rgb(255, 165, 0)',
+    '사태': 'rgb(50, 130, 40)',
+    '차돌양지': 'rgb(0, 0, 255)'
   };
   var gradeCharts = {};
 
@@ -122,43 +118,51 @@
       var grades = [...new Set(chartDataList.map(item => item.grade))];
       var parts = [...new Set(chartDataList.map(item => item.part))];
 
+      $('#gradeCharts').empty(); // 기존 차트 제거
+
       grades.forEach(grade => {
-        var gradeData = chartDataList.filter(item => item.grade === grade);
-        updateGradeChart(grade, gradeData, parts);
+        if (grade && grade.trim() !== '') {
+          var gradeData = chartDataList.filter(item => item.grade.trim().toLowerCase() === grade.trim().toLowerCase());
+          console.log(`${grade} 등급 데이터:`, gradeData);
+          if (gradeData.length > 0) {
+            createGradeChart(grade, gradeData, parts);
+          } else {
+            console.log(`${grade} 등급에 대한 데이터가 없습니다.`);
+          }
+        }
       });
+
+      updateChartsVisibility(); // 초기 표시 상태 설정
     }).fail(function(jqXHR, textStatus, errorThrown) {
       console.error("데이터 가져오기 오류:", textStatus, errorThrown);
     });
   }
 
-  function updateGradeChart(grade, data, parts) {
-    function sanitizeId(str) {
-      return str.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    }
-
+  function createGradeChart(grade, data, parts) {
     var sanitizedGrade = sanitizeId(grade);
+    var chartHtml = `
+                <div class="grade-chart" data-grade="${grade}" id="grade-${sanitizedGrade}">
+                    <h2>${grade} 등급</h2>
+                    <div class="chart-row">
+                        <div class="chart-container">
+                            <canvas id="chart-max-${sanitizedGrade}"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chart-min-${sanitizedGrade}"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chart-avg-${sanitizedGrade}"></canvas>
+                        </div>
+                    </div>
+                    <div id="chart-info-${sanitizedGrade}" class="price-info"></div>
+                </div>
+            `;
+    $('#gradeCharts').append(chartHtml);
+
     var chartIdMax = 'chart-max-' + sanitizedGrade;
     var chartIdMin = 'chart-min-' + sanitizedGrade;
     var chartIdAvg = 'chart-avg-' + sanitizedGrade;
     var chartInfoId = 'chart-info-' + sanitizedGrade;
-
-    if (!document.getElementById(chartIdMax)) {
-      $('#gradeCharts').append(`
-            <h2 id="grade-${sanitizedGrade}">${grade} 등급</h2>
-            <div class="chart-row">
-                <div class="chart-container">
-                    <canvas id="${chartIdMax}"></canvas>
-                </div>
-                <div class="chart-container">
-                    <canvas id="${chartIdMin}"></canvas>
-                </div>
-                <div class="chart-container">
-                    <canvas id="${chartIdAvg}"></canvas>
-                </div>
-            </div>
-            <div id="${chartInfoId}" class="price-info"></div>
-        `);
-    }
 
     function createDataset(data, priceType) {
       return parts.map(part => {
@@ -181,8 +185,8 @@
             x: new Date(item.date),
             y: item[priceType]
           })),
-          borderColor: partColors[part] || getRandomColor(), // 지정된 색상 사용 또는 랜덤 색상
-          backgroundColor: partColors[part] || getRandomColor(), // 지정된 색상 사용 또는 랜덤 색상
+          borderColor: partColors[part] || getRandomColor(),
+          backgroundColor: partColors[part] || getRandomColor(),
           fill: false
         };
       });
@@ -290,12 +294,12 @@
           elements: {
             line: {
               tension: 0.3,
-              borderWidth: 2 // 선 굵기 증가
+              borderWidth: 2
             },
             point: {
               radius: 3,
-              hitRadius: 10, // 마우스 인터랙션을 위한 히트 영역 증가
-              hoverRadius: 5 // 호버 시 포인트 크기 증가
+              hitRadius: 10,
+              hoverRadius: 5
             }
           },
           interaction: {
@@ -369,45 +373,49 @@
     Object.keys(priceInfo).forEach(part => {
       let info = priceInfo[part];
       infoHtml += `
-            <h4>${part}</h4>
-            <p>최고가: ${new Intl.NumberFormat('ko-KR').format(info.max.price)}원
-               (${info.max.brand}, ${new Date(info.max.date).toLocaleDateString()})</p>
-            <p>최저가: ${new Intl.NumberFormat('ko-KR').format(info.min.price)}원
-               (${info.min.brand}, ${new Date(info.min.date).toLocaleDateString()})</p>
-            <p>평균가: ${new Intl.NumberFormat('ko-KR').format(Math.round(info.avg))}원</p>
-        `;
+                    <h4>${part}</h4>
+                    <p>최고가: ${new Intl.NumberFormat('ko-KR').format(info.max.price)}원
+                       (${info.max.brand}, ${new Date(info.max.date).toLocaleDateString()})</p>
+                    <p>최저가: ${new Intl.NumberFormat('ko-KR').format(info.min.price)}원
+                       (${info.min.brand}, ${new Date(info.min.date).toLocaleDateString()})</p>
+                    <p>평균가: ${new Intl.NumberFormat('ko-KR').format(Math.round(info.avg))}원</p>
+                `;
     });
 
     $('#' + chartInfoId).html(infoHtml);
   }
 
-    function getRandomColor() {
-      var letters = '0123456789ABCDEF';
-      var color = '#';
-      for (var i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-      }
-      return color;
-    }
-
-    $(document).ready(function () {
-      console.log("문서 준비 완료, 차트 초기화 중...");
-      updateCharts();
-
-      $('#grade-search').on('input', function () {
-        var searchTerm = $(this).val().toUpperCase();
-        if (searchTerm.length > 0) {
-          var sanitizedSearchTerm = searchTerm.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-          var targetElement = $('#chart-max-' + sanitizedSearchTerm);
-          if (targetElement.length) {
-            $('html, body').animate({
-              scrollTop: targetElement.offset().top - 60
-            }, 500);
-          }
-        }
-      });
+  function updateChartsVisibility() {
+    var searchTerms = $('#grade-search').val().toLowerCase().split(',').map(term => term.trim());
+    $('.grade-chart').each(function() {
+      var gradeElement = $(this);
+      var grade = gradeElement.data('grade').toLowerCase();
+      var shouldShow = searchTerms.length === 0 || searchTerms.some(term => grade.includes(term));
+      gradeElement.toggle(shouldShow);
     });
+  }
 
+  function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+
+  function sanitizeId(str) {
+    return str.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  }
+
+  $(document).ready(function () {
+    console.log("문서 준비 완료, 차트 초기화 중...");
+    updateCharts();
+
+    $('#grade-search').on('input', function () {
+      updateChartsVisibility();
+    });
+  });
 </script>
 </body>
 </html>

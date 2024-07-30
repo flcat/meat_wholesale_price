@@ -1,10 +1,469 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>$Title$</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>쇠고기 도매 가격 차트</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+
+    body {
+      padding-top: 60px;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    #search-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: white;
+      z-index: 1000;
+      padding: 10px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #search-container .search-inner {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    #grade-search {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+
+    .price-info h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    .price-info h4 {
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+    .price-info p {
+      margin: 5px 0;
+    }
+    @media (min-width: 768px) {
+      .chart-row {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+      .chart-container {
+        width: 32%;
+      }
+    }
+    @media (max-width: 767px) {
+      body {
+        padding-top: 50px;
+      }
+      .chart-container {
+        height: 300px;
+      }
+    }
+
+    .price-info-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+    }
+
+    .price-info-column {
+      flex: 1;
+      min-width: 200px;
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .chart-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .chart-container {
+      width: 60%;
+      height: 400px;
+    }
+
+    .price-info {
+      width: 35%;
+      margin-top: 0;
+      padding: 15px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      font-size: 0.9em;
+      overflow-y: auto;
+      max-height: 400px;
+    }
+
+    @media (max-width: 1200px) {
+      .chart-container, .price-info {
+        width: 100%;
+      }
+      .price-info {
+        margin-top: 20px;
+        max-height: none;
+      }
+    }
+  </style>
 </head>
 <body>
-$END$
+<div id="search-container">
+  <div class="search-inner">
+    <input type="text" id="grade-search" placeholder="등급 검색 (예: S, A, B)">
+  </div>
+</div>
+<div class="container">
+  <h1>쇠고기 도매 가격 차트</h1>
+  <div id="gradeCharts">
+    <!-- 등급별 차트가 여기에 동적으로 추가됩니다 -->
+  </div>
+</div>
+
+<script th:inline="javascript">
+
+  function createChart(sanitizedGrade, data) {
+    console.log(`Creating chart for grade: ${sanitizedGrade}`);
+    console.log('Chart data:', data);
+
+    var ctx = document.getElementById(`chart-${sanitizedGrade}`);
+    if (!ctx) {
+      console.error(`Canvas element not found for grade ${sanitizedGrade}`);
+      return null;
+    }
+
+    var datasets = createDatasets(data);
+    console.log('Datasets:', datasets);
+
+    try {
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'day',
+                displayFormats: {
+                  day: 'MM/dd'
+                }
+              },
+              title: {
+                display: true,
+                text: '날짜'
+              }
+            },
+            y: {
+              beginAtZero: false,
+              title: {
+                display: true,
+                text: '평균 가격 (원/KG)'
+              },
+              ticks: {
+                callback: function(value) {
+                  return new Intl.NumberFormat('ko-KR').format(value);
+                }
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += new Intl.NumberFormat('ko-KR').format(context.parsed.y) + '원';
+                  }
+                  return label;
+                }
+              }
+            },
+            legend: {
+              position: 'top',
+            },
+            title: {
+              display: true,
+              text: '평균 가격 추이'
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error(`Error creating chart for grade ${sanitizedGrade}:`, error);
+      return null;
+    }
+  }
+  // 색상 맵 정의
+  const partColors = {
+    '목심': 'rgb(255, 0, 0)',
+    '앞다리/전각': 'rgb(255, 165, 0)',
+    '사태': 'rgb(50, 130, 40)',
+    '차돌양지': 'rgb(0, 0, 255)'
+  };
+  var gradeCharts = {};
+
+  function updateCharts() {
+    $('#gradeCharts').empty();
+
+    $.getJSON('/api/chartData/all', function(chartDataList) {
+      var grades = [...new Set(chartDataList.map(item => normalizeGrade(item.grade)))].filter(grade => grade != null);
+
+      grades.forEach((grade, index) => {
+        setTimeout(() => {
+          var gradeData = chartDataList.filter(item => normalizeGrade(item.grade) === grade);
+          createGradeChart(grade, gradeData);
+        }, index * 100);  // 각 차트 생성 사이에 약간의 지연 추가
+      });
+    });
+  }
+
+  function hasVariation(data) {
+    if (data.length < 15) return false; // 데이터가 15개 미만이면 제외
+
+    const prices = data.map(item => item.avgPrice);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    // 최대가와 최소가의 차이가 10% 미만이면 변동이 없다고 판단
+    return (maxPrice - minPrice) / minPrice > 0.1;
+  }
+
+  $(document).ready(function() {
+    $.getJSON('/api/chartData', function(data) {
+      Object.keys(data).forEach(function(grade) {
+        createGradeChart(grade, data[grade]);
+      });
+    });
+  });
+
+  function createGradeChart(grade, chartData) {
+    var sanitizedGrade = sanitizeId(grade);
+
+    if (!hasVariation(chartData)) {
+      console.log(`Skipping chart for grade ${grade} due to insufficient data or variation`);
+      return;
+    }
+
+    var chartContainer = $(`#grade-${sanitizedGrade}`);
+    if (chartContainer.length === 0) {
+      $('#gradeCharts').append(`
+      <div class="grade-chart" data-grade="${grade}" id="grade-${sanitizedGrade}">
+        <h2>${grade} 등급</h2>
+        <div class="chart-row">
+          <div class="chart-container">
+            <canvas id="chart-${sanitizedGrade}"></canvas>
+          </div>
+          <div id="chart-info-${sanitizedGrade}" class="price-info"></div>
+        </div>
+      </div>
+    `);
+      chartContainer = $(`#grade-${sanitizedGrade}`);
+    }
+
+    if (gradeCharts[sanitizedGrade]) {
+      gradeCharts[sanitizedGrade].destroy();
+    }
+
+    var ctx = document.getElementById(`chart-${sanitizedGrade}`).getContext('2d');
+    gradeCharts[sanitizedGrade] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: createDatasets(chartData)
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'day',
+              displayFormats: {
+                day: 'MM/dd'
+              }
+            },
+            title: {
+              display: true,
+              text: '날짜'
+            }
+          },
+          y: {
+            beginAtZero: false,
+            title: {
+              display: true,
+              text: '평균 가격 (원/KG)'
+            },
+            ticks: {
+              callback: function (value) {
+                return new Intl.NumberFormat('ko-KR').format(value);
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('ko-KR').format(context.parsed.y) + '원';
+                }
+                return label;
+              }
+            }
+          },
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: true,
+            text: '평균 가격 추이'
+          }
+        }
+      }
+    });
+    updatePriceInfo(sanitizedGrade, grade, chartData);
+
+    console.log(`Chart created for grade ${grade}`);
+  }
+
+  function createDatasets(data) {
+    const parts = [...new Set(data.map(item => item.part))];
+    const colors = {
+      '목심': 'rgb(255, 99, 132)',
+      '앞다리/전각': 'rgb(54, 162, 235)',
+      '차돌양지': 'rgb(255, 206, 86)',
+      '사태': 'rgb(75, 192, 192)'
+    };
+
+    return parts.map(part => {
+      const partData = data.filter(item => item.part === part)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      const color = colors[part] || getRandomColor();
+
+      return {
+        label: part,
+        data: partData.map(item => ({
+          x: new Date(item.date),
+          y: item.avgPrice
+        })),
+        borderColor: color,
+        backgroundColor: color,
+        fill: false
+      };
+    });
+  }
+
+  function updatePriceInfo(sanitizedGrade, grade, data) {
+    const infoElement = document.getElementById(`chart-info-${sanitizedGrade}`);
+    if (!infoElement) return;
+
+    const parts = [...new Set(data.map(item => item.part))];
+    let infoHtml = `<h3>${grade} 등급 가격 정보 요약</h3>`;
+    infoHtml += '<div class="price-info-row">';
+
+    parts.forEach(part => {
+      const partData = data.filter(item => item.part === part);
+      const maxPrice = Math.max(...partData.map(item => item.maxPrice));
+      const minPrice = Math.min(...partData.map(item => item.minPrice));
+      const latestData = partData[partData.length - 1]; // 최신 데이터
+
+      infoHtml += `
+      <div class="price-info-column">
+        <h4>${part}</h4>
+        <p>최근 평균가: ${new Intl.NumberFormat('ko-KR').format(latestData.avgPrice)}원</p>
+        <p>최고가: ${new Intl.NumberFormat('ko-KR').format(maxPrice)}원</p>
+        <p>최저가: ${new Intl.NumberFormat('ko-KR').format(minPrice)}원</p>
+      </div>
+    `;
+    });
+
+    infoHtml += '</div>';
+    infoElement.innerHTML = infoHtml;
+    console.log(`Finished creating info for grade ${grade}`);
+  }
+
+  function sanitizeId(str) {
+    if (!str) return '';
+    return str.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  }
+
+  function normalizeGrade(grade) {
+    if (grade == null || grade.trim() === '') {
+      return null;
+    }
+    grade = grade.trim().replace(/\s/g, '');
+
+    // 한글 등급 처리
+    if (/^[가-힣]+$/.test(grade)) {
+      return grade; // 한글 등급은 그대로 반환
+    }
+
+    // 영문 등급 처리
+    grade = grade.toUpperCase();
+    switch (grade) {
+      case 'CHOICE':
+        return '초이스';
+      case 'PRIME':
+        return '프라임';
+      default:
+        return grade;
+    }
+  }
+
+  $(document).ready(function () {
+    console.log("문서 준비 완료, 차트 초기화 중...");
+    updateCharts();
+
+    $('#grade-search').on('input', function () {
+      var searchTerms = $(this).val().toLowerCase().split(',').map(term => term.trim());
+      $('.grade-chart').each(function() {
+        var gradeElement = $(this);
+        var grade = gradeElement.data('grade').toLowerCase();
+        var shouldShow = searchTerms.length === 0 || searchTerms.some(term => grade.includes(term));
+        gradeElement.toggle(shouldShow);
+      });
+
+      if (searchTerms.length > 0) {
+        var sanitizedSearchTerm = sanitizeId(searchTerms[0]);
+        var targetElement = $('#chart-max-' + sanitizedSearchTerm);
+        if (targetElement.length) {
+          $('html, body').animate({
+            scrollTop: targetElement.offset().top - 60
+          }, 500);
+        }
+      }
+    });
+  });
+
+</script>
 </body>
 </html>
