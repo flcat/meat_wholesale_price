@@ -23,6 +23,17 @@ def extract_meat_part(prd_name):
             return part['name']
     return '기타'
 
+async def retry_goto(page, url, max_attempts=3):
+    for attempt in range(max_attempts):
+        try:
+            await page.goto(url, wait_until="load", timeout=60000)
+            return
+        except TimeoutError:
+            if attempt == max_attempts - 1:
+                raise
+            print(f"Timeout on attempt {attempt + 1}, retrying...")
+            await asyncio.sleep(5) 
+
 async def crawl_category(page, category, meat_part):
     url = f"{config['base_url']}{config['product_list_endpoint']}"
     params = {
@@ -34,8 +45,8 @@ async def crawl_category(page, category, meat_part):
     full_url = f"{url}?{query_string}"
     
     try:
-        await page.goto(full_url, wait_until="networkidle", timeout=60000)
-        
+        await page.goto(full_url, wait_until="load", timeout=60000)
+        await retry_goto(page, full_url)
         # 페이지 로드 상태 확인 및 스크롤
         await page.evaluate("""
             () => {
