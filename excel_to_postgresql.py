@@ -22,24 +22,32 @@ def connect_to_db():
 
 def create_table_if_not_exists(cursor, table_name):
     create_table_query = sql.SQL("""
-    CREATE TABLE IF NOT EXISTS {} (
+    CREATE TABLE IF NOT EXISTS {table} (
         id SERIAL PRIMARY KEY,
-    date DATE,
-    brand VARCHAR(255),
-    origin VARCHAR(255),
-    part VARCHAR(255),
-    grade VARCHAR(255),
-    price_kg INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (date, brand, origin, part, grade)
-)
-CREATE INDEX idx_meat_prices_date ON meat_prices(date)
-CREATE INDEX idx_meat_prices_brand ON meat_prices(brand)
-CREATE INDEX idx_meat_prices_origin ON meat_prices(origin)
-CREATE INDEX idx_meat_prices_part ON meat_prices(part)
-    """).format(sql.Identifier(table_name))
+        date DATE,
+        brand VARCHAR(255),
+        origin VARCHAR(255),
+        part VARCHAR(255),
+        grade VARCHAR(255),
+        price_kg INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (date, brand, origin, part, grade)
+    )
+    """).format(table=sql.Identifier(table_name))
     
     cursor.execute(create_table_query)
+
+    # 인덱스 생성을 위한 개별 쿼리들
+    index_queries = [
+        "CREATE INDEX IF NOT EXISTS idx_{0}_date ON {0} (date)",
+        "CREATE INDEX IF NOT EXISTS idx_{0}_brand ON {0} (brand)",
+        "CREATE INDEX IF NOT EXISTS idx_{0}_origin ON {0} (origin)",
+        "CREATE INDEX IF NOT EXISTS idx_{0}_part ON {0} (part)"
+    ]
+
+    for query in index_queries:
+        formatted_query = sql.SQL(query.format(table_name)).format(sql.Identifier(table_name))
+        cursor.execute(formatted_query)
 
 def insert_data(cursor, table_name, data):
     insert_query = sql.SQL("""
@@ -96,25 +104,30 @@ def process_excel_file(file_path, table_name):
     return df.values.tolist()
 
 def main():
-    conn = connect_to_db()
-    cursor = conn.cursor()
-    
+    conn = None
+    cursor = None
     try:
+        conn = connect_to_db()
+        cursor = conn.cursor()
+
+        create_table_if_not_exists(cursor, 'meat_prices')
         
-        # 일반 육류 가격 데이터 처리
         data = process_excel_file(config['file_path'] + config['file_name'], 'meat_prices')
         insert_data(cursor, 'meat_prices', data)
         
         conn.commit()
         print("Data successfully inserted into PostgreSQL database.")
     except Exception as e:
-        conn.rollback()
+        if conn:
+            conn.rollback()
         print(f"An error occurred: {e}")
         import traceback
         print(traceback.format_exc())
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
     main()
