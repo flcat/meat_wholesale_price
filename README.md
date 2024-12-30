@@ -19,14 +19,14 @@
 
 
 ## 사용된 기술 스택
-Python, Springboot, SpringJpa, PostgreSQL, AWS EC2, ACM, Nginx, Docker
+Python, Springboot 3.3.1, SpringJpa, PostgreSQL, AWS EC2, ACM, Nginx, Docker
 
 ## 시스템 요구사항
 
 Python 3.7+
-Java 11+
+Java 21+
 PostgreSQL 데이터베이스
-Spring Boot 2.x
+Spring Boot 3.3+
 
 ## 설치 및 설정
 
