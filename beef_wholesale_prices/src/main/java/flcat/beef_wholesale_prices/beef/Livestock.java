@@ -2,8 +2,6 @@ package flcat.beef_wholesale_prices.beef;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * 가축 가격 정보를 담는 DTO(Data Transfer Object) 클래스
@@ -15,8 +13,6 @@ import lombok.Setter;
  * 참고: @Data가 @Getter와 @Setter를 포함하고 있어서 중복된 어노테이션이 있음
  */
 @Data
-@Getter
-@Setter
 public class Livestock {
     /**
      * 품목명 (예: 소, 돼지, 닭)
