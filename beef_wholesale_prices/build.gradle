@@ -27,6 +27,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+	implementation 'org.testng:testng:7.1.0'
+	implementation 'org.testng:testng:7.1.0'
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -40,7 +44,18 @@ dependencies {
 	// Lombok과 MapStruct를 함께 사용하는 경우
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'io.netty:netty-resolver-dns-native-macos:4.1.75.Final:osx-aarch_64'
 
+}
+
+tasks.withType(Jar) {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.withType(JavaCompile) {
+	options.compilerArgs = [
+			'-Amapstruct.defaultComponentModel=spring',
+			'-Amapstruct.unmappedTargetPolicy=ERROR'
+	]
 }
 
 tasks.named('test') {
@@ -52,7 +67,15 @@ jar {
 		attributes 'Main-Class': 'flcat.beef_wholesale_prices.BeefWholesalePricesApplication'  // 메인 클래스 경로를 정확히 지정
 	}
 }
-
+jar {
+	enabled = false
+}
 bootJar {
 	mainClass = 'flcat.beef_wholesale_prices.BeefWholesalePricesApplication'  // 메인 클래스 경로를 정확히 지정
+}
+clean {
+	delete file('src/main/generated')
+}
+compileJava {
+	options.compilerArgs << '-parameters'
 }

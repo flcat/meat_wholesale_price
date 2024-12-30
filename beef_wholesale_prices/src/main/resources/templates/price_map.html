@@ -1,10 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>$Title$</title>
+  <title>한국 지도</title>
+  <style>
+    .area {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #888;
+      border-radius: 3px;
+      font-size: 12px;
+      top: -5px;
+      left: 15px;
+      padding: 2px;
+    }
+  </style>
 </head>
 <body>
-$END$
+<div id="map" style="width:100%;height:800px;"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=9b414f66f932264b589c396ddc77f435"></script>
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  let mapContainer = document.getElementById('map'), // 지도를 표시할 div
+      mapOption = {
+        center: new kakao.maps.LatLng(36.298951 , 127.838473), // 지도의 중심좌표
+        level: 12.9, // 지도의 확대 레벨
+        mapTypeId: kakao.maps.MapTypeId.NONE,
+        draggable: false,
+        scrollwheel: false,
+        disableDoubleClick: true,
+        disableDoubleClickZoom: true,
+        keyboardShortcuts: false
+      };
+
+  let map = new kakao.maps.Map(mapContainer, mapOption),
+      customOverlay = new kakao.maps.CustomOverlay({})
+
+  let detailMode = false; // level에 따라 다른 json 파일 사용
+  let level = '';
+  let polygons = [];
+  let areas = [];
+  init("korea.json") // 초기 시작
+
+  kakao.maps.event.addListener(map, 'zoom_changed', function () {
+    level = map.getLevel()
+    // if (!detailMode && level <= 10) { // level 에 따라 다른 json 파일을 사용한다.
+    //   detailMode = true;
+    //   removePolygon();
+    // } else
+      if (detailMode && level > 10) { // level 에 따라 다른 json 파일을 사용한다.
+      detailMode = false;
+      removePolygon();
+      init("korea.json")
+    }
+  });
+
+
+
+  // 모든 폴리곤을 지우는 함수
+  function removePolygon() {
+    for (let i = 0; i < polygons.length; i++) {
+      polygons[i].setMap(null);
+    }
+    areas = [];
+    polygons = [];
+  }
+
+
+  // 폴리곤 생성
+  function init(path) {
+    $.getJSON(path, function (geojson) {
+      var data = geojson.features;
+      $.each(data, function (index, val) {
+        var coordinates = val.geometry.coordinates;
+        var name = val.properties.CTP_ENG_NM;
+
+        var ob = new Object();
+        ob.name = name;
+        ob.path = [];
+
+        $.each(coordinates[0], function (index, coordinate) {
+          ob.path.push(new kakao.maps.LatLng(coordinate[1], coordinate[0]));
+        });
+        areas.push(ob);
+      });
+
+      // areas 배열이 채워진 후에 폴리곤을 표시
+      for (var i = 0, len = areas.length; i < len; i++) {
+        displayArea(areas[i]);
+      }
+    });
+
+
+    function displayArea(area) {
+
+      var polygon = new kakao.maps.Polygon({
+        map: map,
+        path: area.path,
+        strokeWeight: 2,
+        strokeColor: '#004c80',
+        strokeOpacity: 1,
+        fillColor: '#fff',
+        fillOpacity: 0.7
+      });
+      polygons.push(polygon);
+
+      kakao.maps.event.addListener(polygon, 'mouseover', function (mouseEvent) {
+        polygon.setOptions({fillColor: '#09f'});
+        customOverlay.setContent('<div class="area">' + area.name + '</div>');
+        customOverlay.setPosition(mouseEvent.latLng);
+        customOverlay.setMap(map);
+      });
+
+      kakao.maps.event.addListener(polygon, 'mousemove', function (mouseEvent) {
+
+        customOverlay.setPosition(mouseEvent.latLng);
+      });
+
+      kakao.maps.event.addListener(polygon, 'mouseout', function () {
+        polygon.setOptions({fillColor: '#fff'});
+        customOverlay.setMap(null);
+      });
+
+      kakao.maps.event.addListener(polygon, 'click', function (mouseEvent) {
+        if (!detailMode) {
+          map.setLevel(10); // level에 따라 이벤트 변경
+          var latlng = mouseEvent.latLng;
+
+          // 지도의 중심을 부드럽게 클릭한 위치로 이동시킵니다.
+          map.panTo(latlng);
+        } else {
+          // 클릭 이벤트 함수
+          // callFunctionWithRegionCode(area.location);
+        }
+      });
+    }
+  }
+
+  // 페이지 로드 시 init 함수 호출
+  $(document).ready(function() {
+    init("korea.json");
+  });
+
+  /*]]>*/
+</script>
 </body>
 </html>
